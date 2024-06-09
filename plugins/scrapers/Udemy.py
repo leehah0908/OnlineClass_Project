@@ -1,4 +1,10 @@
 import requests
+import json
+import pandas as pd
+import pymysql
+from sqlalchemy import create_engine
+
+SUBCATEGORY_FILE_PATH = '/Users/leehah/OnlineClass_Project/files/subcategories copy 4.json'
 
 # Udemy API Info
 API_CLIENT_ID = '4jOdAhTin8SeeTtpZlzxnkCiVcQiqfBbIktzZO8R'
@@ -8,7 +14,17 @@ BASE64_ID = 'NGpPZEFoVGluOFNlZVR0cFpsenhua0NpVmNRaXFmQmJJa3R6Wk84UjpwcjdkRjZMNzB
 # Udemy API URL
 BASE_URL = 'https://www.udemy.com/api-2.0/'
 
-def get_courses(page = 1, page_size = 100, category = ''):
+# MySQL
+DATABASE_TYPE = 'mysql'
+DBAPI = 'mysqlconnector'
+ENDPOINT = 'localhost'
+USER = 'leehah'
+PASSWORD = 'leehah'
+PORT = 3306
+DATABASE = 'OnlineClass'
+
+
+def get_courses(page = 1, page_size = 100, subcategory = ''):
     url = f"{BASE_URL}courses/"
     headers = {
         'Accept': 'application/json, text/plain, */*',
@@ -17,7 +33,7 @@ def get_courses(page = 1, page_size = 100, category = ''):
     params = {
         'page': page,
         'page_size': page_size,
-        'subcategory' : category}
+        'subcategory' : subcategory}
 
     response = requests.get(url, headers = headers, params = params)
 
@@ -29,32 +45,60 @@ def get_courses(page = 1, page_size = 100, category = ''):
 
 def fetch_all_courses():
     all_courses = []
-    page = 1
-    page_size = 100
-    category = 'Esoteric Practices'
+    
+    with open(SUBCATEGORY_FILE_PATH, 'r') as f:
+        subcategory_list = json.load(f)
 
-    while True:
-        response = get_courses(page = page, page_size = page_size, category = category)
-        if response and 'results' in response:
-            all_courses.extend(response['results'])
-            if len(response['results']) < page_size:
+    for subcategory in subcategory_list:
+        print(f'{subcategory} Crawing Start')
+        page = 1
+        page_size = 100
+        while True:
+            response = get_courses(page = page, page_size = page_size, subcategory = subcategory)
+            if response and 'results' in response:
+                for tmp_course in response['results']:
+                    tmp_course['sub_category'] = subcategory
+                all_courses.extend(response['results'])
+                if len(response['results']) < page_size:
+                    print(f'{subcategory} -> {len(response["results"])}')
+                    print(f'Finished subcategory: {subcategory}')
+                    print('-' * 40)
+                    break
+                page += 1
+            else:
+                print(f'Finished subcategory: {subcategory}')
                 break
-            page += 1
-            print(page)
-        else:
-            print('finish')
-            break
 
     return all_courses
 
 def main():
     all_courses = fetch_all_courses()
-    print(len(all_courses))
-    # for course in all_courses:
-    #     print(f"Title: {course['title']}")
-    #     print(f"URL: {course['url']}")
-    #     print(f"Price: {course['price']}")
-    #     print("-" * 40)
+    print(f"Total courses fetched: {len(all_courses)}")
+    raw_df = pd.DataFrame(all_courses)
+
+    col_str_df = raw_df.astype({'id' : 'str',
+                            'price_detail' : 'str',
+                            'visible_instructors' : 'str',
+                            'locale' : 'str',
+                            'curriculum_lectures' : 'str',
+                            'curriculum_items' : 'str'})
+
+    try:
+        db_connection_str = f'{DATABASE_TYPE}+{DBAPI}://{USER}:{PASSWORD}@{ENDPOINT}:{PORT}/{DATABASE}'
+        db_connection = create_engine(db_connection_str)
+        conn = db_connection.connect()
+
+        col_str_df.to_sql(name = 'udemy_class_list',
+                                        con = db_connection,
+                                        if_exists = 'append',
+                                        index = False
+                                    )
+        print("Data stored in MySQL successfully")
+        conn.close()
+        
+    except Exception as e:
+        conn.close()
+        print(e)
 
 if __name__ == '__main__':
     main()

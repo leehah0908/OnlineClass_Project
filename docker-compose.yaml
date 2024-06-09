@@ -86,6 +86,20 @@ x-airflow-common:
       condition: service_healthy
 
 services:
+  mysql:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'OnlineClass'
+      MYSQL_USER: 'leehah'
+      MYSQL_PASSWORD: 'leehah'
+      MYSQL_ROOT_PASSWORD: 'leehah'
+      TZ: Asia/Seoul
+    ports:
+      - '3306:3306'
+    volumes:
+      - 'mysqldata:/var/lib/mysql'
+
   postgres:
     image: postgres:13
     environment:
@@ -285,4 +299,6 @@ services:
         condition: service_completed_successfully
 
 volumes:
+  mysqldata:
+    driver: local
   postgres-db-volume:
