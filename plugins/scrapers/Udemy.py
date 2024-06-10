@@ -4,7 +4,7 @@ import pandas as pd
 import pymysql
 from sqlalchemy import create_engine
 
-SUBCATEGORY_FILE_PATH = '/Users/leehah/OnlineClass_Project/files/subcategories copy 4.json'
+SUBCATEGORY_FILE_PATH = '/Users/leehah/OnlineClass_Project/files/subcategories copy 8.json'
 
 # Udemy API Info
 API_CLIENT_ID = '4jOdAhTin8SeeTtpZlzxnkCiVcQiqfBbIktzZO8R'
@@ -49,6 +49,7 @@ def fetch_all_courses():
     with open(SUBCATEGORY_FILE_PATH, 'r') as f:
         subcategory_list = json.load(f)
 
+    print('-' * 40)
     for subcategory in subcategory_list:
         print(f'{subcategory} Crawing Start')
         page = 1
@@ -60,13 +61,13 @@ def fetch_all_courses():
                     tmp_course['sub_category'] = subcategory
                 all_courses.extend(response['results'])
                 if len(response['results']) < page_size:
-                    print(f'{subcategory} -> {len(response["results"])}')
                     print(f'Finished subcategory: {subcategory}')
                     print('-' * 40)
                     break
                 page += 1
             else:
-                print(f'Finished subcategory: {subcategory}')
+                print(f'Failed subcategory: {subcategory}')
+                print('-' * 40)
                 break
 
     return all_courses
