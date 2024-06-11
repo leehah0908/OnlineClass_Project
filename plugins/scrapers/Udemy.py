@@ -4,7 +4,7 @@ import pandas as pd
 import pymysql
 from sqlalchemy import create_engine
 
-SUBCATEGORY_FILE_PATH = '/Users/leehah/OnlineClass_Project/files/subcategories copy 8.json'
+SUBCATEGORY_FILE_PATH = '/Users/leehah/OnlineClass_Project/files/subcategories.json'
 
 # Udemy API Info
 API_CLIENT_ID = '4jOdAhTin8SeeTtpZlzxnkCiVcQiqfBbIktzZO8R'
